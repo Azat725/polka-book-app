@@ -1,0 +1,4 @@
+services:
+  pdf-sandbox:
+    security_opt:
+      - apparmor=polka-pdf

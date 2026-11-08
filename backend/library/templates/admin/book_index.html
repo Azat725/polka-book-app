@@ -1,0 +1,15 @@
+{% extends "admin/index.html" %}
+{% load i18n %}
+{% block content %}
+<section class="module" aria-labelledby="system-summary">
+  <h2 id="system-summary">{% translate "System overview" %}</h2>
+  <table style="width:100%"><tbody>
+    <tr><th scope="row">{% translate "Telegram users" %}</th><td>{{ system_statistics.users }}</td></tr>
+    <tr><th scope="row">{% translate "Active users in 7 days" %}</th><td>{{ system_statistics.active_users_7d }}</td></tr>
+    <tr><th scope="row">{% translate "Books including trash" %}</th><td>{{ system_statistics.books }}</td></tr>
+    <tr><th scope="row">{% translate "Private storage" %}</th><td>{{ system_statistics.storage_bytes|filesizeformat }}</td></tr>
+    <tr><th scope="row">{% translate "Failed PDF jobs" %}</th><td>{{ system_statistics.failed_jobs }}</td></tr>
+  </tbody></table>
+</section>
+{{ block.super }}
+{% endblock %}

@@ -1,0 +1,4 @@
+services:
+  web:
+    volumes:
+      - ./infra/nginx/bootstrap.conf.template:/etc/nginx/templates/default.conf.template:ro

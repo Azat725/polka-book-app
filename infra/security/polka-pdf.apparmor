@@ -1,0 +1,19 @@
+# Ubuntu 24.04+ / AppArmor 4. Applied only to the offline PDF sandbox container.
+# The outer container is read-only, non-root, has no capabilities or host mounts.
+# Bubblewrap creates a second, per-job mount/PID/user namespace inside it.
+#include <tunables/global>
+profile polka-pdf flags=(attach_disconnected,mediate_deleted) {
+  #include <abstractions/base>
+  file,
+  network,
+  capability,
+  mount,
+  umount,
+  pivot_root,
+  userns,
+  signal,
+  ptrace (read, readby, trace, tracedby),
+  deny /proc/sys/** w,
+  deny /proc/kcore r,
+  deny /sys/** wklx,
+}

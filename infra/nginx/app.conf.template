@@ -1,0 +1,76 @@
+limit_req_zone $binary_remote_addr zone=api_limit:10m rate=20r/s;
+limit_req_zone $binary_remote_addr zone=admin_login:1m rate=5r/m;
+map $http_origin $allowed_pages_origin {
+    default "";
+    "${PAGES_ORIGIN}" $http_origin;
+}
+server {
+    listen 80;
+    server_name ${DOMAIN};
+    location /.well-known/acme-challenge/ { root /var/www/certbot; }
+    location / { return 301 https://${DOMAIN}$request_uri; }
+}
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${DOMAIN};
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    client_max_body_size 6m;
+    client_body_timeout 60s;
+    root /usr/share/nginx/html;
+    server_tokens off;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy no-referrer always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://telegram.org 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://t.me https://*.t.me https://telegram.org https://*.telegram.org; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self' https://web.telegram.org https://*.telegram.org" always;
+    location /.well-known/acme-challenge/ { root /var/www/certbot; }
+    location = /nginx-health { access_log off; return 200 'ok'; }
+    location /api/ {
+        add_header Access-Control-Allow-Origin $allowed_pages_origin always;
+        add_header Access-Control-Allow-Methods 'GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS' always;
+        add_header Access-Control-Allow-Headers 'Authorization, Content-Type, Range' always;
+        add_header Access-Control-Expose-Headers 'Content-Range, Content-Length, Accept-Ranges' always;
+        add_header Vary Origin always;
+        if ($request_method = OPTIONS) { return 204; }
+        limit_req zone=api_limit burst=80 nodelay;
+        proxy_pass http://api:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_read_timeout 100s;
+        proxy_request_buffering on;
+    }
+    location /admin/ {
+        proxy_pass http://api:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location = /admin/login/ {
+        limit_req zone=admin_login burst=5 nodelay;
+        proxy_pass http://api:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location = /health { proxy_pass http://api:8000; proxy_set_header Host $host; proxy_set_header X-Forwarded-Proto https; }
+    location /_private/ {
+        internal;
+        alias /private/;
+        max_ranges 1;
+        gzip off;
+        etag on;
+        add_header Cache-Control "private, no-store" always;
+        add_header X-Content-Type-Options nosniff always;
+        add_header Access-Control-Allow-Origin $allowed_pages_origin always;
+        add_header Access-Control-Expose-Headers 'Content-Range, Content-Length, Accept-Ranges' always;
+        add_header Vary Origin always;
+    }
+    location /static/ { alias /static/; }
+    location /assets/ { try_files $uri =404; expires 30d; }
+    location /pdfjs/ { try_files $uri =404; expires 7d; }
+    location / { try_files $uri $uri/ /index.html; expires -1; }
+}

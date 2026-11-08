@@ -1,0 +1,192 @@
+name: polka
+x-logging: &logging
+  driver: json-file
+  options: {max-size: '10m', max-file: '3'}
+x-environment: &environment
+  DJANGO_ENV: production
+  DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Run python scripts/configure.py}
+  POSTGRES_HOST: db
+  POSTGRES_DB: ${POSTGRES_DB:-books}
+  POSTGRES_USER: ${POSTGRES_USER:-books}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+  REDIS_URL: redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD}@redis:6379/0
+  PRIVATE_ROOT: /private
+  PDF_JOB_ROOT: /jobs
+  PDF_PROCESSING_MODE: sandbox
+  FILE_X_ACCEL: "1"
+  DJANGO_ALLOWED_HOSTS: ${DOMAIN:?Set DOMAIN},localhost,127.0.0.1
+  CSRF_TRUSTED_ORIGINS: https://${DOMAIN}
+  SECURE_SSL_REDIRECT: "1"
+x-backend: &backend
+  logging: *logging
+  image: polka-backend:local
+  build:
+    context: .
+    dockerfile: backend/Dockerfile
+  environment: *environment
+  volumes:
+    - private:/private
+    - jobs:/jobs
+    - static:/app/backend/staticfiles
+  networks: [internal]
+  restart: unless-stopped
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  mem_limit: 1g
+  pids_limit: 128
+services:
+  db:
+    logging: *logging
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-books}
+      POSTGRES_USER: ${POSTGRES_USER:-books}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes: [postgres:/var/lib/postgresql/data]
+    networks: [internal]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 768m
+  redis:
+    logging: *logging
+    image: redis:8-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+    command: [sh, -c, 'exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD" --maxmemory 128mb --maxmemory-policy noeviction']
+    volumes: [redis:/data]
+    networks: [internal]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 256m
+  init:
+    <<: *backend
+    user: "0:0"
+    command: [chown, '10001:10001', /private, /jobs, /app/backend/staticfiles]
+    cap_drop: []
+    cap_add: [CHOWN]
+    restart: "no"
+  setup:
+    <<: *backend
+    command: [sh, -c, 'python manage.py migrate --noinput && python manage.py collectstatic --noinput']
+    restart: "no"
+    depends_on:
+      init: {condition: service_completed_successfully}
+      db: {condition: service_healthy}
+  api:
+    <<: *backend
+    environment:
+      <<: *environment
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:?Set TELEGRAM_BOT_TOKEN}
+    depends_on:
+      setup: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, -c, 'import urllib.request; r=urllib.request.Request("http://127.0.0.1:8000/health",headers={"X-Forwarded-Proto":"https"}); urllib.request.urlopen(r,timeout=5)']
+      interval: 20s
+      timeout: 7s
+      retries: 5
+  worker:
+    <<: *backend
+    command: [celery, -A, config, worker, --concurrency=1, --loglevel=INFO]
+    depends_on:
+      setup: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+      pdf-sandbox: {condition: service_healthy}
+  beat:
+    <<: *backend
+    command: [celery, -A, config, beat, --loglevel=INFO, --schedule=/tmp/celerybeat-schedule]
+    depends_on:
+      setup: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+    mem_limit: 256m
+  pdf-sandbox:
+    logging: *logging
+    build:
+      context: .
+      dockerfile: infra/pdf-sandbox/Dockerfile
+    network_mode: none
+    volumes: [jobs:/jobs]
+    read_only: true
+    tmpfs: [/tmp:size=128m]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true, 'seccomp=./infra/security/pdf-seccomp.json']
+    mem_limit: 1g
+    pids_limit: 64
+    healthcheck:
+      test: [CMD, python, -I, -c, 'from pathlib import Path; assert Path("/jobs/.sandbox-ready").read_text()=="ready"']
+      start_period: 20s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    depends_on:
+      init: {condition: service_completed_successfully}
+  web:
+    logging: *logging
+    build:
+      context: .
+      dockerfile: infra/nginx/Dockerfile
+      args: {TELEGRAM_BOT_USERNAME: '${TELEGRAM_BOT_USERNAME}'}
+    ports: ["80:80", "443:443"]
+    environment: {DOMAIN: '${DOMAIN}', PAGES_ORIGIN: '${PAGES_ORIGIN:-}'}
+    volumes:
+      - private:/private:ro
+      - static:/static:ro
+      - letsencrypt:/etc/letsencrypt:ro
+      - acme:/var/www/certbot:ro
+    networks: [internal, edge]
+    depends_on:
+      api: {condition: service_healthy}
+    restart: unless-stopped
+    mem_limit: 128m
+  certbot:
+    image: certbot/certbot:latest
+    profiles: [tools]
+    volumes: [letsencrypt:/etc/letsencrypt, acme:/var/www/certbot]
+    networks: [edge]
+  backup:
+    build:
+      context: .
+      dockerfile: infra/backup/Dockerfile
+    profiles: [tools]
+    environment: &backup-environment
+      POSTGRES_DB: ${POSTGRES_DB:-books}
+      POSTGRES_USER: ${POSTGRES_USER:-books}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      RESTIC_REPOSITORY: ${RESTIC_REPOSITORY:-}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      RESTIC_CACHE_DIR: /tmp/restic-cache
+    volumes: [private:/private:ro]
+    tmpfs: [/snapshot:size=512m, /tmp:size=128m]
+    networks: [internal, edge]
+  restore:
+    build:
+      context: .
+      dockerfile: infra/backup/Dockerfile
+    profiles: [tools]
+    entrypoint: [/usr/local/bin/book-restore]
+    environment: *backup-environment
+    volumes: [private:/private]
+    tmpfs: [/snapshot:size=512m, /tmp:size=128m]
+    networks: [internal, edge]
+networks:
+  internal: {internal: true}
+  edge:
+volumes:
+  postgres:
+  redis:
+  private:
+  jobs:
+  static:
+  letsencrypt:
+  acme:

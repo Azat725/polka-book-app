@@ -1,0 +1,3462 @@
+openapi: 3.0.3
+info:
+  title: Book App API
+  version: 1.0.0
+  description: Private Telegram PDF library
+paths:
+  /api/schema:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - cookieAuth: []
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/{kind}/{annotation_id}:
+    patch:
+      operationId: v1_partial_update
+      parameters:
+      - in: path
+        name: annotation_id
+        schema:
+          type: string
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+        required: true
+      - in: path
+        name: kind
+        schema:
+          type: string
+          pattern: ^bookmarks|highlights|notes$
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAnnotation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAnnotation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAnnotation'
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Annotation'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+    delete:
+      operationId: v1_destroy
+      parameters:
+      - in: path
+        name: annotation_id
+        schema:
+          type: string
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+        required: true
+      - in: path
+        name: kind
+        schema:
+          type: string
+          pattern: ^bookmarks|highlights|notes$
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/annotations:
+    get:
+      operationId: v1_annotations_retrieve
+      parameters:
+      - in: query
+        name: book_id
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: cursor
+        schema:
+          type: string
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - bookmarks
+          - highlights
+          - notes
+      - in: query
+        name: limit
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnotationPage'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/auth/logout:
+    post:
+      operationId: v1_auth_logout_create
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/auth/refresh:
+    post:
+      operationId: v1_auth_refresh_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RefreshInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RefreshInput'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionTokens'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/auth/telegram:
+    post:
+      operationId: v1_auth_telegram_create
+      description: Verify HMAC, timestamp and profile; never trust initDataUnsafe.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelegramLoginInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TelegramLoginInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TelegramLoginInput'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelegramSession'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/books:
+    get:
+      operationId: books_list
+      parameters:
+      - in: query
+        name: collection_id
+        schema:
+          type: string
+      - in: query
+        name: cursor
+        schema:
+          type: string
+      - in: query
+        name: favorite
+        schema:
+          type: string
+      - in: query
+        name: folder_id
+        schema:
+          type: string
+      - in: query
+        name: limit
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+      - in: query
+        name: sort
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookPage'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/books/{book_id}:
+    get:
+      operationId: book_retrieve
+      parameters:
+      - in: path
+        name: book_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+    patch:
+      operationId: v1_books_partial_update
+      parameters:
+      - in: path
+        name: book_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBook'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBook'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBook'
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+    delete:
+      operationId: v1_books_destroy
+      parameters:
+      - in: path
+        name: book_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/books/{book_id}/{kind}:
+    get:
+      operationId: book_annotations_list
+      parameters:
+      - in: path
+        name: book_id
+        schema:
+          type: string
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+        required: true
+      - in: query
+        name: cursor
+        schema:
+          type: string
+      - in: path
+        name: kind
+        schema:
+          type: string
+          pattern: ^bookmarks|highlights|notes$
+        required: true
+      - in: query
+        name: limit
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnotationPage'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+    post:
+      operationId: v1_books_create
+      parameters:
+      - in: path
+        name: book_id
+        schema:
+          type: string
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+        required: true
+      - in: path
+        name: kind
+        schema:
+          type: string
+          pattern: ^bookmarks|highlights|notes$
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Annotation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Annotation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Annotation'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Annotation'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/books/{book_id}/cover:
+    get:
+      operationId: v1_books_cover_retrieve
+      parameters:
+      - in: path
+        name: book_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v1/books/{book_id}/covers:
+    post:
+      operationId: v1_books_covers_create
+      parameters:
+      - in: path
+        name: book_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CoverUpload'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CoverUpload'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/books/{book_id}/file:
+    get:
+      operationId: v1_books_file_retrieve
+      parameters:
+      - in: header
+        name: If-Range
+        schema:
+          type: string
+      - in: header
+        name: Range
+        schema:
+          type: string
+      - in: path
+        name: book_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '206':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '416':
+          description: No response body
+  /api/v1/books/{book_id}/processing-retries:
+    post:
+      operationId: v1_books_processing_retries_create
+      parameters:
+      - in: path
+        name: book_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/books/{book_id}/progress:
+    get:
+      operationId: v1_books_progress_retrieve
+      parameters:
+      - in: path
+        name: book_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadingProgress'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+    put:
+      operationId: v1_books_progress_update
+      parameters:
+      - in: path
+        name: book_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReadingProgressUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReadingProgressUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReadingProgressUpdate'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadingProgress'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/books/{book_id}/reader-settings:
+    get:
+      operationId: v1_books_reader_settings_retrieve
+      parameters:
+      - in: path
+        name: book_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookReaderPreferences'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+    patch:
+      operationId: v1_books_reader_settings_partial_update
+      parameters:
+      - in: path
+        name: book_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBookReaderPreferencesInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBookReaderPreferencesInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBookReaderPreferencesInput'
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookReaderPreferences'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/collections:
+    get:
+      operationId: v1_collections_list
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollectionPage'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+    post:
+      operationId: v1_collections_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Collection'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Collection'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Collection'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+          description: ''
+  /api/v1/collections/{collection_id}/books/{book_id}:
+    put:
+      operationId: v1_collections_books_update
+      parameters:
+      - in: path
+        name: book_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: collection_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+    delete:
+      operationId: v1_collections_books_destroy
+      parameters:
+      - in: path
+        name: book_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: collection_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/collections/{id}:
+    get:
+      operationId: v1_collections_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this collection.
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+          description: ''
+    patch:
+      operationId: v1_collections_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this collection.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCollection'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCollection'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCollection'
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+          description: ''
+    delete:
+      operationId: v1_collections_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this collection.
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/exports/annotations:
+    get:
+      operationId: v1_exports_annotations_list
+      parameters:
+      - in: query
+        name: book_id
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - markdown
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Annotation'
+            text/markdown:
+              schema:
+                type: string
+          description: ''
+  /api/v1/folders:
+    get:
+      operationId: v1_folders_list
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FolderPage'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+    post:
+      operationId: v1_folders_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Folder'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Folder'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Folder'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Folder'
+          description: ''
+  /api/v1/folders/{id}:
+    get:
+      operationId: v1_folders_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this folder.
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Folder'
+          description: ''
+    patch:
+      operationId: v1_folders_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this folder.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFolder'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFolder'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFolder'
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Folder'
+          description: ''
+    delete:
+      operationId: v1_folders_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this folder.
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/me:
+    get:
+      operationId: v1_me_retrieve
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/reading-sessions:
+    post:
+      operationId: v1_reading_sessions_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReadingSessionInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReadingSessionInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReadingSessionInput'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadingSession'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/reading-sessions/{session_id}/heartbeats:
+    post:
+      operationId: v1_reading_sessions_heartbeats_create
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HeartbeatInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HeartbeatInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HeartbeatInput'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadingSession'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/settings:
+    get:
+      operationId: v1_settings_retrieve
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Preferences'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+    patch:
+      operationId: v1_settings_partial_update
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPreferences'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPreferences'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPreferences'
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Preferences'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/statistics:
+    get:
+      operationId: v1_statistics_retrieve
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadingStatistics'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/sync/changes:
+    get:
+      operationId: v1_sync_changes_retrieve
+      parameters:
+      - in: query
+        name: cursor
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncChanges'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/theme-presets:
+    get:
+      operationId: v1_theme_presets_list
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ThemePresetPage'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+    post:
+      operationId: v1_theme_presets_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ThemePreset'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ThemePreset'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ThemePreset'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThemePreset'
+          description: ''
+  /api/v1/theme-presets/{id}:
+    get:
+      operationId: v1_theme_presets_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this theme preset.
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThemePreset'
+          description: ''
+    patch:
+      operationId: v1_theme_presets_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this theme preset.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedThemePreset'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedThemePreset'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedThemePreset'
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThemePreset'
+          description: ''
+    delete:
+      operationId: v1_theme_presets_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this theme preset.
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/trash:
+    get:
+      operationId: v1_trash_retrieve
+      parameters:
+      - in: query
+        name: cursor
+        schema:
+          type: string
+      - in: query
+        name: limit
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookPage'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/trash/{book_id}:
+    delete:
+      operationId: v1_trash_destroy
+      parameters:
+      - in: path
+        name: book_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/trash/{book_id}/restore:
+    post:
+      operationId: v1_trash_restore_create
+      parameters:
+      - in: path
+        name: book_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/trash/purge:
+    post:
+      operationId: v1_trash_purge_create
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/uploads:
+    post:
+      operationId: v1_uploads_create
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UploadInput'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadSession'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/uploads/{upload_id}:
+    get:
+      operationId: v1_uploads_retrieve
+      parameters:
+      - in: path
+        name: upload_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadSession'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+    delete:
+      operationId: v1_uploads_destroy
+      parameters:
+      - in: path
+        name: upload_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/uploads/{upload_id}/chunks/{index}:
+    put:
+      operationId: v1_uploads_chunks_update
+      parameters:
+      - in: path
+        name: index
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: upload_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      security:
+      - Bearer: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+  /api/v1/uploads/{upload_id}/complete:
+    post:
+      operationId: v1_uploads_complete_create
+      parameters:
+      - in: path
+        name: upload_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - v1
+      security:
+      - Bearer: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: ''
+components:
+  schemas:
+    Annotation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        book_id:
+          type: string
+          format: uuid
+          readOnly: true
+        book_title:
+          type: string
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/KindEnum'
+          readOnly: true
+        page:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        position:
+          type: number
+          format: double
+        text:
+          type: string
+          maxLength: 50000
+        color:
+          type: string
+          maxLength: 20
+        quads: {}
+        prefix:
+          type: string
+          maxLength: 200
+        suffix:
+          type: string
+          maxLength: 200
+        revision:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - book_id
+      - book_title
+      - created_at
+      - id
+      - kind
+      - page
+      - revision
+      - updated_at
+    AnnotationPage:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Annotation'
+        next:
+          type: string
+          nullable: true
+      required:
+      - next
+      - results
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: object
+          additionalProperties: {}
+      required:
+      - error
+    Book:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 300
+        author:
+          type: string
+          maxLength: 200
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        favorite:
+          type: boolean
+        folder_id:
+          type: string
+          format: uuid
+          nullable: true
+        collection_ids:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        deleted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        revision:
+          type: integer
+          readOnly: true
+        page_count:
+          type: integer
+          readOnly: true
+        size_bytes:
+          type: integer
+          readOnly: true
+        processing_status:
+          type: string
+          readOnly: true
+        error_code:
+          type: string
+          readOnly: true
+        cover_url:
+          type: string
+          nullable: true
+          readOnly: true
+        progress:
+          type: object
+          properties:
+            page:
+              type: integer
+            position:
+              type: number
+            revision:
+              type: integer
+          required:
+          - page
+          - position
+          - revision
+          readOnly: true
+      required:
+      - collection_ids
+      - cover_url
+      - created_at
+      - deleted_at
+      - error_code
+      - id
+      - page_count
+      - processing_status
+      - progress
+      - revision
+      - size_bytes
+      - title
+      - updated_at
+    BookPage:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Book'
+        next:
+          type: string
+          nullable: true
+      required:
+      - next
+      - results
+    BookReaderPreferences:
+      type: object
+      properties:
+        theme:
+          $ref: '#/components/schemas/ThemeEnum'
+        mode:
+          $ref: '#/components/schemas/ModeEnum'
+        language:
+          $ref: '#/components/schemas/LanguageEnum'
+        onboarding_done:
+          type: boolean
+        cover_size:
+          $ref: '#/components/schemas/CoverSizeEnum'
+        density:
+          $ref: '#/components/schemas/DensityEnum'
+        reader_mode:
+          $ref: '#/components/schemas/ReaderModeEnum'
+        sound_enabled:
+          type: boolean
+        page_sound:
+          type: boolean
+        ui_sound:
+          type: boolean
+        volume:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+        animation_speed:
+          type: number
+          format: double
+          maximum: 2
+          minimum: 0.5
+        brightness:
+          type: number
+          format: double
+          maximum: 1.5
+          minimum: 0.3
+        contrast:
+          type: number
+          format: double
+          maximum: 2
+          minimum: 0.5
+        night_mode:
+          type: boolean
+        texture:
+          $ref: '#/components/schemas/TextureEnum'
+        reader_texture:
+          $ref: '#/components/schemas/ReaderTextureEnum'
+        shelf_style:
+          $ref: '#/components/schemas/ShelfStyleEnum'
+        custom_colors:
+          type: object
+          additionalProperties:
+            type: string
+            pattern: ^#[0-9a-fA-F]{6}$
+        revision:
+          type: integer
+          minimum: 0
+        zoom:
+          type: number
+          format: double
+          maximum: 4
+          minimum: 0.25
+        fit_mode:
+          $ref: '#/components/schemas/FitModeEnum'
+    Collection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 500
+        book_count:
+          type: integer
+          readOnly: true
+          default: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - book_count
+      - created_at
+      - id
+      - name
+    CollectionPage:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Collection'
+        next:
+          type: string
+          nullable: true
+      required:
+      - next
+      - results
+    CoverSizeEnum:
+      enum:
+      - large
+      - medium
+      - small
+      type: string
+      description: |-
+        * `large` - large
+        * `medium` - medium
+        * `small` - small
+    CoverUpload:
+      type: object
+      properties:
+        file:
+          type: string
+          format: uri
+      required:
+      - file
+    CurrentUser:
+      type: object
+      properties:
+        settings:
+          $ref: '#/components/schemas/Preferences'
+        user:
+          $ref: '#/components/schemas/TelegramUser'
+        statistics:
+          $ref: '#/components/schemas/ReadingStatistics'
+      required:
+      - settings
+      - statistics
+      - user
+    DensityEnum:
+      enum:
+      - comfortable
+      - compact
+      type: string
+      description: |-
+        * `comfortable` - comfortable
+        * `compact` - compact
+    FitModeEnum:
+      enum:
+      - page
+      - width
+      type: string
+      description: |-
+        * `page` - page
+        * `width` - width
+    Folder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+    FolderPage:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Folder'
+        next:
+          type: string
+          nullable: true
+      required:
+      - next
+      - results
+    HeartbeatInput:
+      type: object
+      properties:
+        active:
+          type: boolean
+        closed:
+          type: boolean
+      required:
+      - active
+    KindEnum:
+      enum:
+      - bookmarks
+      - highlights
+      - notes
+      type: string
+      description: |-
+        * `bookmarks` - Bookmark
+        * `highlights` - Highlight
+        * `notes` - Note
+    LanguageEnum:
+      enum:
+      - en
+      - ru
+      type: string
+      description: |-
+        * `en` - en
+        * `ru` - ru
+    ModeEnum:
+      enum:
+      - dark
+      - light
+      - system
+      type: string
+      description: |-
+        * `dark` - dark
+        * `light` - light
+        * `system` - system
+    PatchedAnnotation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        book_id:
+          type: string
+          format: uuid
+          readOnly: true
+        book_title:
+          type: string
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/KindEnum'
+          readOnly: true
+        page:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        position:
+          type: number
+          format: double
+        text:
+          type: string
+          maxLength: 50000
+        color:
+          type: string
+          maxLength: 20
+        quads: {}
+        prefix:
+          type: string
+          maxLength: 200
+        suffix:
+          type: string
+          maxLength: 200
+        revision:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedBook:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 300
+        author:
+          type: string
+          maxLength: 200
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        favorite:
+          type: boolean
+        folder_id:
+          type: string
+          format: uuid
+          nullable: true
+        collection_ids:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        deleted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        revision:
+          type: integer
+          readOnly: true
+        page_count:
+          type: integer
+          readOnly: true
+        size_bytes:
+          type: integer
+          readOnly: true
+        processing_status:
+          type: string
+          readOnly: true
+        error_code:
+          type: string
+          readOnly: true
+        cover_url:
+          type: string
+          nullable: true
+          readOnly: true
+        progress:
+          type: object
+          properties:
+            page:
+              type: integer
+            position:
+              type: number
+            revision:
+              type: integer
+          required:
+          - page
+          - position
+          - revision
+          readOnly: true
+    PatchedBookReaderPreferencesInput:
+      type: object
+      properties:
+        reader_mode:
+          $ref: '#/components/schemas/ReaderModeEnum'
+        animation_speed:
+          type: number
+          format: double
+          maximum: 2
+          minimum: 0.5
+        brightness:
+          type: number
+          format: double
+          maximum: 1.5
+          minimum: 0.3
+        contrast:
+          type: number
+          format: double
+          maximum: 2
+          minimum: 0.5
+        night_mode:
+          type: boolean
+        revision:
+          type: integer
+          minimum: 0
+        zoom:
+          type: number
+          format: double
+          maximum: 4
+          minimum: 0.25
+        fit_mode:
+          $ref: '#/components/schemas/FitModeEnum'
+    PatchedCollection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 500
+        book_count:
+          type: integer
+          readOnly: true
+          default: 0
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedFolder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedPreferences:
+      type: object
+      properties:
+        theme:
+          $ref: '#/components/schemas/ThemeEnum'
+        mode:
+          $ref: '#/components/schemas/ModeEnum'
+        language:
+          $ref: '#/components/schemas/LanguageEnum'
+        onboarding_done:
+          type: boolean
+        cover_size:
+          $ref: '#/components/schemas/CoverSizeEnum'
+        density:
+          $ref: '#/components/schemas/DensityEnum'
+        reader_mode:
+          $ref: '#/components/schemas/ReaderModeEnum'
+        sound_enabled:
+          type: boolean
+        page_sound:
+          type: boolean
+        ui_sound:
+          type: boolean
+        volume:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+        animation_speed:
+          type: number
+          format: double
+          maximum: 2
+          minimum: 0.5
+        brightness:
+          type: number
+          format: double
+          maximum: 1.5
+          minimum: 0.3
+        contrast:
+          type: number
+          format: double
+          maximum: 2
+          minimum: 0.5
+        night_mode:
+          type: boolean
+        texture:
+          $ref: '#/components/schemas/TextureEnum'
+        reader_texture:
+          $ref: '#/components/schemas/ReaderTextureEnum'
+        shelf_style:
+          $ref: '#/components/schemas/ShelfStyleEnum'
+        custom_colors:
+          type: object
+          additionalProperties:
+            type: string
+            pattern: ^#[0-9a-fA-F]{6}$
+        revision:
+          type: integer
+          minimum: 0
+    PatchedThemePreset:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        settings: {}
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    Preferences:
+      type: object
+      properties:
+        theme:
+          $ref: '#/components/schemas/ThemeEnum'
+        mode:
+          $ref: '#/components/schemas/ModeEnum'
+        language:
+          $ref: '#/components/schemas/LanguageEnum'
+        onboarding_done:
+          type: boolean
+        cover_size:
+          $ref: '#/components/schemas/CoverSizeEnum'
+        density:
+          $ref: '#/components/schemas/DensityEnum'
+        reader_mode:
+          $ref: '#/components/schemas/ReaderModeEnum'
+        sound_enabled:
+          type: boolean
+        page_sound:
+          type: boolean
+        ui_sound:
+          type: boolean
+        volume:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+        animation_speed:
+          type: number
+          format: double
+          maximum: 2
+          minimum: 0.5
+        brightness:
+          type: number
+          format: double
+          maximum: 1.5
+          minimum: 0.3
+        contrast:
+          type: number
+          format: double
+          maximum: 2
+          minimum: 0.5
+        night_mode:
+          type: boolean
+        texture:
+          $ref: '#/components/schemas/TextureEnum'
+        reader_texture:
+          $ref: '#/components/schemas/ReaderTextureEnum'
+        shelf_style:
+          $ref: '#/components/schemas/ShelfStyleEnum'
+        custom_colors:
+          type: object
+          additionalProperties:
+            type: string
+            pattern: ^#[0-9a-fA-F]{6}$
+        revision:
+          type: integer
+          minimum: 0
+    ReaderModeEnum:
+      enum:
+      - flip
+      - scroll
+      type: string
+      description: |-
+        * `flip` - flip
+        * `scroll` - scroll
+    ReaderTextureEnum:
+      enum:
+      - linen
+      - none
+      - paper
+      type: string
+      description: |-
+        * `linen` - linen
+        * `none` - none
+        * `paper` - paper
+    ReadingProgress:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        position:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+        revision:
+          type: integer
+          minimum: 0
+      required:
+      - page
+      - position
+      - revision
+    ReadingProgressUpdate:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        position:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+        revision:
+          type: integer
+          minimum: 0
+        client_mutation_id:
+          type: string
+          maxLength: 100
+      required:
+      - client_mutation_id
+      - page
+      - position
+      - revision
+    ReadingSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        active_seconds:
+          type: integer
+          minimum: 0
+      required:
+      - active_seconds
+      - id
+    ReadingSessionInput:
+      type: object
+      properties:
+        book_id:
+          type: string
+          format: uuid
+      required:
+      - book_id
+    ReadingStatistics:
+      type: object
+      properties:
+        books:
+          type: integer
+          minimum: 0
+        book_count:
+          type: integer
+          minimum: 0
+        read:
+          type: integer
+          minimum: 0
+        reading:
+          type: integer
+          minimum: 0
+        storage_bytes:
+          type: integer
+          minimum: 0
+        reading_seconds:
+          type: integer
+          minimum: 0
+      required:
+      - book_count
+      - books
+      - read
+      - reading
+      - reading_seconds
+      - storage_bytes
+    RefreshInput:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+      required:
+      - refresh_token
+    SessionTokens:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+      required:
+      - access_token
+      - expires_in
+      - refresh_token
+    ShelfStyleEnum:
+      enum:
+      - line
+      - plain
+      - wood
+      type: string
+      description: |-
+        * `line` - line
+        * `plain` - plain
+        * `wood` - wood
+    StatusEnum:
+      enum:
+      - want
+      - reading
+      - read
+      type: string
+      description: |-
+        * `want` - Want
+        * `reading` - Reading
+        * `read` - Read
+    SyncChanges:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        cursor:
+          type: integer
+        has_more:
+          type: boolean
+      required:
+      - cursor
+      - has_more
+      - results
+    TelegramLoginInput:
+      type: object
+      properties:
+        init_data:
+          type: string
+          maxLength: 16384
+      required:
+      - init_data
+    TelegramSession:
+      type: object
+      properties:
+        settings:
+          $ref: '#/components/schemas/Preferences'
+        user:
+          $ref: '#/components/schemas/TelegramUser'
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+      required:
+      - access_token
+      - expires_in
+      - refresh_token
+      - settings
+      - user
+    TelegramUser:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+        username:
+          type: string
+          nullable: true
+        avatar_url:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - avatar_url
+      - first_name
+      - id
+      - username
+    TextureEnum:
+      enum:
+      - grain
+      - linen
+      - none
+      - paper
+      type: string
+      description: |-
+        * `grain` - grain
+        * `linen` - linen
+        * `none` - none
+        * `paper` - paper
+    ThemeEnum:
+      enum:
+      - burgundy
+      - cream
+      - eighties
+      - gdr
+      - midnight
+      - obsidian
+      - richesse
+      - terracotta
+      - tuscan
+      - ussr
+      type: string
+      description: |-
+        * `burgundy` - burgundy
+        * `cream` - cream
+        * `eighties` - eighties
+        * `gdr` - gdr
+        * `midnight` - midnight
+        * `obsidian` - obsidian
+        * `richesse` - richesse
+        * `terracotta` - terracotta
+        * `tuscan` - tuscan
+        * `ussr` - ussr
+    ThemePreset:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        settings: {}
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+    ThemePresetPage:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThemePreset'
+        next:
+          type: string
+          nullable: true
+      required:
+      - next
+      - results
+    UploadInput:
+      type: object
+      properties:
+        filename:
+          type: string
+          maxLength: 255
+        size:
+          type: integer
+          maximum: 100000000
+          minimum: 1
+      required:
+      - filename
+      - size
+    UploadSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        size:
+          type: integer
+        state:
+          type: string
+        chunk_size:
+          type: integer
+        uploaded_chunks:
+          type: array
+          items:
+            type: integer
+        chunk_checksums:
+          type: object
+          additionalProperties:
+            type: string
+        expires_at:
+          type: string
+          format: date-time
+      required:
+      - chunk_checksums
+      - chunk_size
+      - expires_at
+      - filename
+      - id
+      - size
+      - state
+      - uploaded_chunks
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      description: Opaque short-lived session token. Obtain via verified Telegram
+        initData.
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
