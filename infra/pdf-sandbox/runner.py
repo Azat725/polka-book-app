@@ -54,12 +54,12 @@ def check_startup():
     marker.unlink(missing_ok=True)
     try:
         help_result = subprocess.run(
-            ["bwrap", "--help"], capture_output=True, text=True, timeout=10, env=ENVIRONMENT
+            ["bwrap", "--help"], check=False, capture_output=True, text=True, timeout=10, env=ENVIRONMENT
         )
         DISABLE_USERNS = "--disable-userns" in help_result.stdout
         command = namespace_command() + ["/usr/local/bin/python", "-I", "-c", "import pypdfium2, PIL"]
         result = subprocess.run(
-            command, capture_output=True, text=True, timeout=15, env=ENVIRONMENT, preexec_fn=limits
+            command, check=False, capture_output=True, text=True, timeout=15, env=ENVIRONMENT, preexec_fn=limits
         )
         if result.returncode:
             raise RuntimeError(
@@ -116,7 +116,7 @@ def process(job):
         ]
     )
     try:
-        result = subprocess.run(command, timeout=45, capture_output=True, env=ENVIRONMENT, preexec_fn=limits)
+        result = subprocess.run(command, check=False, timeout=45, capture_output=True, env=ENVIRONMENT, preexec_fn=limits)
         if result.returncode or not (output / "result.json").exists():
             write_error(output, "sandbox_failed")
     except subprocess.TimeoutExpired:
